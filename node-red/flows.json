@@ -1,0 +1,613 @@
+[
+    {
+        "id": "49c229518c26e94c",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "b6ec7d16a577e91b",
+        "type": "mysql",
+        "z": "49c229518c26e94c",
+        "mydb": "aacc61433c03d082",
+        "name": "",
+        "x": 920,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0d9d13fb321d9af8",
+        "type": "mqtt in",
+        "z": "49c229518c26e94c",
+        "name": "first",
+        "topic": "topic/first",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "6b1b68f1bec90314",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 70,
+        "y": 80,
+        "wires": [
+            [
+                "540567ee81f210e1"
+            ]
+        ]
+    },
+    {
+        "id": "09fb9a4a10e26ce6",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "Prep sql Req",
+        "func": "try {\n    // Extract values from the JSON payload\n    let jsonObject = msg.payload;\n\n    let deviceName = jsonObject.deviceName;\n    let currentPower = jsonObject.currentPower;\n    let totalPowerConsumption = jsonObject.totalPowerConsumption;\n    let state = jsonObject.state;\n\n    let jsonString = JSON.stringify(jsonObject);\n\n    // Get the MQTT topic\n    let mqttTopic = msg.topic;\n\n    // Prepare the SQL query with placeholders\n    var sql = \"INSERT INTO mqtt_messages (topic, payload, deviceName, currentPower, totalPowerConsumption, state) VALUES (?, ?, ?, ?, ?, ?)\";\n\n    // Set msg.topic to the SQL query\n    msg.topic = sql;\n\n    // Set msg.payload to an array containing the MQTT topic and extracted values\n    msg.payload = [mqttTopic, jsonString, deviceName, currentPower, totalPowerConsumption, state];\n\n    // Return the modified msg object\n    return msg;\n} catch (error) {\n    // Log the error for debugging\n    console.error('Error:', error.message);\n\n    // Log the payload for debugging\n    console.log('Payload:', msg.payload);\n\n    // Pass the error along the flow\n    //throw new Error('Failed to process JSON payload');\n}\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 140,
+        "wires": [
+            [
+                "b6ec7d16a577e91b"
+            ]
+        ]
+    },
+    {
+        "id": "cc7aca4998f240e7",
+        "type": "mqtt in",
+        "z": "49c229518c26e94c",
+        "name": "second",
+        "topic": "topic/second",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "6b1b68f1bec90314",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 70,
+        "y": 140,
+        "wires": [
+            [
+                "540567ee81f210e1"
+            ]
+        ]
+    },
+    {
+        "id": "2d4d1ccb3c7a5cb0",
+        "type": "inject",
+        "z": "49c229518c26e94c",
+        "name": "StateOn",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "testTech/smartPlug1/set",
+        "payload": "{\"state\": \"ON\"}",
+        "payloadType": "json",
+        "x": 100,
+        "y": 520,
+        "wires": [
+            [
+                "f118d284b979f6e5"
+            ]
+        ]
+    },
+    {
+        "id": "1e628f69657e0382",
+        "type": "mqtt out",
+        "z": "49c229518c26e94c",
+        "name": "publish",
+        "topic": "testTech/smartPlug1/set",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "6b1b68f1bec90314",
+        "x": 460,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "540567ee81f210e1",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "delete \"{",
+        "func": "\n// Extract the payload from the incoming message\nlet payloadString = msg.payload;\n\n// Remove leading \"{\" and trailing \"}\"\nlet trimmedPayload = payloadString.slice(1, -1);\nmsg.payload = trimmedPayload;\n\n// Return the modified msg object\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 200,
+        "y": 140,
+        "wires": [
+            [
+                "47ffd14e2a38b0ce"
+            ]
+        ]
+    },
+    {
+        "id": "47ffd14e2a38b0ce",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "String to array",
+        "func": "try {\n    // Extract the payload from the incoming message\n    let payloadString = msg.payload;\n\n    // Split the payload into individual key-value pairs\n    let pairs = payloadString.split(',');\n\n    // Initialize an empty array to store the key-value pairs\n    let keyValuePairs = [];\n\n    // Iterate over each pair and split it into key and value\n    for (let pair of pairs) {\n        let [key, value] = pair.split(':');\n\n        // Remove leading and trailing whitespace from key and value\n        key = key.trim();\n        value = value.trim();\n\n        // Push the key-value pair to the array\n        keyValuePairs.push({ [key]: value });\n    }\n\n    // Assign the array of key-value pairs back to msg.payload\n    msg.payload = keyValuePairs;\n\n    // Return the modified msg object\n    return msg;\n} catch (error) {\n    // Log the error for debugging\n    console.error('Error:', error.message);\n\n    // Log the payload for debugging\n    console.log('Payload:', msg.payload);\n\n    // Pass the error along the flow\n    //throw new Error('Failed to parse JSON payload');\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 140,
+        "wires": [
+            [
+                "f8a876cfd16a8f91"
+            ]
+        ]
+    },
+    {
+        "id": "f8a876cfd16a8f91",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "Array to JsonObject",
+        "func": "try {\n    // Extract the array of key-value pairs from the incoming message\n    let keyValuePairs = msg.payload;\n\n    // Convert the array of key-value pairs to a JSON string\n    let jsonString = JSON.stringify(Object.assign({}, ...keyValuePairs));\n\n    // Parse the JSON string into a JavaScript object\n    let jsonObject = JSON.parse(jsonString);\n\n    // Assign the parsed JSON object back to msg.payload\n    msg.payload = jsonObject;\n\n    // Return the modified msg object\n    return msg;\n} catch (error) {\n    // Log the error for debugging\n    console.error('Error:', error.message);\n\n    // Log the payload for debugging\n    console.log('Payload:', msg.payload);\n\n    // Pass the error along the flow\n    //throw new Error('Failed to convert array to JSON');\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 140,
+        "wires": [
+            [
+                "09fb9a4a10e26ce6",
+                "f3595fea4cc02669"
+            ]
+        ]
+    },
+    {
+        "id": "bcdc27c8f1434b74",
+        "type": "http in",
+        "z": "49c229518c26e94c",
+        "name": "PostSendData",
+        "url": "/sendData",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 90,
+        "y": 340,
+        "wires": [
+            [
+                "b357f0c92d271295"
+            ]
+        ]
+    },
+    {
+        "id": "7b5fe688cea63276",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "Process msg",
+        "func": "// Extract topic and message from the payload\nlet topic = msg.payload.topic;\nlet message = msg.payload.message;\n\n// Set topic and message in the message object\nmsg.topic = topic;\nmsg.payload = message;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 340,
+        "wires": [
+            [
+                "fb54bc15bc2c190e",
+                "72e45fb132dcd723",
+                "09fb9a4a10e26ce6"
+            ]
+        ]
+    },
+    {
+        "id": "fb54bc15bc2c190e",
+        "type": "mqtt out",
+        "z": "49c229518c26e94c",
+        "name": "publish",
+        "topic": "",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "6b1b68f1bec90314",
+        "x": 680,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "72e45fb132dcd723",
+        "type": "http response",
+        "z": "49c229518c26e94c",
+        "name": "Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 680,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "8a8ae361fbde703d",
+        "type": "debug",
+        "z": "49c229518c26e94c",
+        "name": "Debug Node",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 440,
+        "y": 20,
+        "wires": []
+    },
+    {
+        "id": "b357f0c92d271295",
+        "type": "json",
+        "z": "49c229518c26e94c",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 270,
+        "y": 340,
+        "wires": [
+            [
+                "7b5fe688cea63276"
+            ]
+        ]
+    },
+    {
+        "id": "80ad8dc2f8f567c3",
+        "type": "inject",
+        "z": "49c229518c26e94c",
+        "name": "StateOFF",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "testTech/smartPlug1/set",
+        "payload": "{\"state\": \"OFF\"}",
+        "payloadType": "json",
+        "x": 100,
+        "y": 580,
+        "wires": [
+            [
+                "e6ceb6a6e23819cf"
+            ]
+        ]
+    },
+    {
+        "id": "37579bbba41989b3",
+        "type": "mqtt out",
+        "z": "49c229518c26e94c",
+        "name": "publish",
+        "topic": "testTech/smartPlug1/set",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "6b1b68f1bec90314",
+        "x": 460,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "f118d284b979f6e5",
+        "type": "json",
+        "z": "49c229518c26e94c",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 270,
+        "y": 460,
+        "wires": [
+            [
+                "1e628f69657e0382",
+                "09fb9a4a10e26ce6"
+            ]
+        ]
+    },
+    {
+        "id": "e6ceb6a6e23819cf",
+        "type": "json",
+        "z": "49c229518c26e94c",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 270,
+        "y": 540,
+        "wires": [
+            [
+                "37579bbba41989b3",
+                "09fb9a4a10e26ce6"
+            ]
+        ]
+    },
+    {
+        "id": "bcce3fa1d8333c68",
+        "type": "mqtt out",
+        "z": "49c229518c26e94c",
+        "name": "publish",
+        "topic": "testTech/smartPlug1/set",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "6b1b68f1bec90314",
+        "x": 580,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "62235640e69a44b2",
+        "type": "mqtt out",
+        "z": "49c229518c26e94c",
+        "name": "publish",
+        "topic": "testTech/smartPlug1/set",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "6b1b68f1bec90314",
+        "x": 580,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "3aa14262f992370d",
+        "type": "json",
+        "z": "49c229518c26e94c",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 390,
+        "y": 700,
+        "wires": [
+            [
+                "bcce3fa1d8333c68",
+                "9d443ef87f5c30b3",
+                "09fb9a4a10e26ce6"
+            ]
+        ]
+    },
+    {
+        "id": "7a12700a4bbc282c",
+        "type": "json",
+        "z": "49c229518c26e94c",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 390,
+        "y": 760,
+        "wires": [
+            [
+                "62235640e69a44b2",
+                "9d443ef87f5c30b3",
+                "09fb9a4a10e26ce6"
+            ]
+        ]
+    },
+    {
+        "id": "73a9aa7699e6a5cb",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "SetStateOn",
+        "func": "msg.topic = 'testTech/smartPlug1/set';\nmsg.payload = '{\"state\": \"ON\"}';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 250,
+        "y": 700,
+        "wires": [
+            [
+                "3aa14262f992370d"
+            ]
+        ]
+    },
+    {
+        "id": "e67c5b538dca2632",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "SetStateOff",
+        "func": "msg.topic = 'testTech/smartPlug1/set';\nmsg.payload = '{\"state\": \"OFF\"}';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 250,
+        "y": 760,
+        "wires": [
+            [
+                "7a12700a4bbc282c"
+            ]
+        ]
+    },
+    {
+        "id": "3c27220d52c2c7e5",
+        "type": "http in",
+        "z": "49c229518c26e94c",
+        "name": "SetStateon",
+        "url": "/testTech/smartPlug1/setOn",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 80,
+        "y": 700,
+        "wires": [
+            [
+                "73a9aa7699e6a5cb"
+            ]
+        ]
+    },
+    {
+        "id": "de1385a9256d022e",
+        "type": "http in",
+        "z": "49c229518c26e94c",
+        "name": "SetStateOff",
+        "url": "/testTech/smartPlug1/setOff",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 90,
+        "y": 760,
+        "wires": [
+            [
+                "e67c5b538dca2632"
+            ]
+        ]
+    },
+    {
+        "id": "9d443ef87f5c30b3",
+        "type": "http response",
+        "z": "49c229518c26e94c",
+        "name": "Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 580,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "8633bc6ab067c323",
+        "type": "mqtt in",
+        "z": "49c229518c26e94c",
+        "name": "#",
+        "topic": "#",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "6b1b68f1bec90314",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 70,
+        "y": 200,
+        "wires": [
+            [
+                "540567ee81f210e1"
+            ]
+        ]
+    },
+    {
+        "id": "f3595fea4cc02669",
+        "type": "function",
+        "z": "49c229518c26e94c",
+        "name": "Prep sql Req",
+        "func": "try {\n    // Extract values from the JSON payload\n    let jsonObject = msg.payload;\n\n    let deviceName = jsonObject.deviceName;\n    let currentPower = jsonObject.currentPower;\n    let totalPowerConsumption = jsonObject.totalPowerConsumption;\n    let state = jsonObject.state;\n\n    // Prepare the SQL query with placeholders\n    var sql = \"INSERT INTO smart_plug (device_name, current_power, total_power_consumption, state) VALUES (?, ?, ?, ?)\";\n\n    // Set msg.topic to the SQL query\n    msg.topic = sql;\n\n    // Set msg.payload to an array containing the MQTT topic and extracted values\n    msg.payload = [deviceName, currentPower, totalPowerConsumption, state];\n\n    // Return the modified msg object\n    return msg;\n} catch (error) {\n    // Log the error for debugging\n    console.error('Error:', error.message);\n\n    // Log the payload for debugging\n    console.log('Payload:', msg.payload);\n}\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 60,
+        "wires": [
+            [
+                "b6ec7d16a577e91b"
+            ]
+        ]
+    },
+    {
+        "id": "aacc61433c03d082",
+        "type": "MySQLdatabase",
+        "name": "lazaar_eversun",
+        "host": "mysql-lazaar.alwaysdata.net",
+        "port": "3306",
+        "db": "lazaar_eversun",
+        "tz": "",
+        "charset": "UTF8"
+    },
+    {
+        "id": "6b1b68f1bec90314",
+        "type": "mqtt-broker",
+        "name": "Local",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]

@@ -1,0 +1,21 @@
+spring:
+  r2dbc:
+    url: r2dbc:mariadb://mysql-lazaar.alwaysdata.net:3306/lazaar_eversun
+    username: lazaar_eversun
+    password: "AZErty12:"
+
+  data:
+    r2dbc:
+      repositories:
+        enabled: true
+    jpa:
+      repositories:
+        enabled: false  # Disable JPA repositories
+
+  logging:
+    level:
+      org.hibernate.SQL: DEBUG
+      org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+mqtt-api:
+  base-url: http://localhost:1880
+  sendData: /sendData
